@@ -126,7 +126,7 @@ const TOOLS = [
     },
     {
         name: 'launch_app',
-        description: 'Launch an application or open a file on the system. Do NOT use this carelessly — only launch apps when the user explicitly asks. For Chrome/browser, use launch_browser instead.',
+        description: 'Launch an application or open a file on the system. Do NOT use this carelessly — only launch apps when the user explicitly asks to open something.',
         permissionKey: 'app_launch',
         parameters: {
             type: 'object',
@@ -137,24 +137,21 @@ const TOOLS = [
         },
         execute: async ({ target }) => {
             try {
-                // Auto-redirect Chrome launches to launch_browser
-                if (/chrome/i.test(target) && !/canary|chromium/i.test(target)) {
-                    const { executeTool } = require('../agent/tools');
-                    return await executeTool('launch_browser', { action: 'open' });
-                }
-
                 const { shell } = require('electron');
                 const path = require('path');
                 const resolvedTarget = path.resolve(target);
 
+                // Use shell.openPath for files/apps — no CMD window
                 const result = await shell.openPath(resolvedTarget);
                 if (result === '') {
                     return { success: true, launched: target };
                 }
+                // If openPath fails (returns error string), try openExternal for URLs
                 if (/^https?:\/\//i.test(target)) {
                     await shell.openExternal(target);
                     return { success: true, launched: target };
                 }
+                // Last resort: exec with hidden window
                 return new Promise((resolve) => {
                     exec(`start "" "${target}"`, { timeout: 10000, windowsHide: true }, (err) => {
                         if (err) resolve({ error: err.message });
@@ -163,99 +160,6 @@ const TOOLS = [
                 });
             } catch (e) {
                 return { error: e.message };
-            }
-        },
-    },
-    {
-        name: 'launch_browser',
-        description: `Open Chrome with the user's saved profile (skips the profile picker).
-Actions:
-- open: Launch Chrome with saved profile. Optionally pass a URL to open.
-- list_profiles: Show all Chrome profiles with their real names so the user can pick one.
-- set_default: Save a profile as the default for all future launches.
-ALWAYS use this instead of launch_app for Chrome/browser requests.`,
-        permissionKey: 'app_launch',
-        parameters: {
-            type: 'object',
-            properties: {
-                action: { type: 'string', enum: ['open', 'list_profiles', 'set_default'], description: 'Action to perform' },
-                profile: { type: 'string', description: 'For set_default: profile directory name (e.g., "Profile 1", "Default")' },
-                url: { type: 'string', description: 'For open: optional URL to open in Chrome' },
-            },
-            required: ['action'],
-        },
-        execute: async ({ action, profile, url }) => {
-            const fs = require('fs');
-            const path = require('path');
-            const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-            const userDataDir = path.join(process.env.LOCALAPPDATA, 'Google', 'Chrome', 'User Data');
-
-            switch (action) {
-                case 'list_profiles': {
-                    try {
-                        const dirs = fs.readdirSync(userDataDir).filter(d => {
-                            const full = path.join(userDataDir, d);
-                            return fs.statSync(full).isDirectory() &&
-                                (d === 'Default' || d.startsWith('Profile '));
-                        });
-                        const profiles = dirs.map(dir => {
-                            let name = dir;
-                            try {
-                                const prefsPath = path.join(userDataDir, dir, 'Preferences');
-                                const prefs = JSON.parse(fs.readFileSync(prefsPath, 'utf8'));
-                                name = prefs.profile?.name || prefs.account_info?.[0]?.full_name || dir;
-                            } catch { }
-                            return { directory: dir, name };
-                        });
-                        const savedProfile = db.getConfig('browser.chrome_profile');
-                        return {
-                            profiles,
-                            count: profiles.length,
-                            currentDefault: savedProfile || 'Not set — use set_default to pick one',
-                        };
-                    } catch (e) { return { error: e.message }; }
-                }
-
-                case 'set_default': {
-                    if (!profile) return { error: 'profile is required (e.g., "Profile 1" or "Default")' };
-                    const profileDir = path.join(userDataDir, profile);
-                    if (!fs.existsSync(profileDir)) {
-                        return { error: `Profile "${profile}" not found. Use list_profiles first.` };
-                    }
-                    db.setConfig('browser.chrome_profile', profile);
-                    // Get the profile's display name
-                    let displayName = profile;
-                    try {
-                        const prefs = JSON.parse(fs.readFileSync(path.join(profileDir, 'Preferences'), 'utf8'));
-                        displayName = prefs.profile?.name || prefs.account_info?.[0]?.full_name || profile;
-                    } catch { }
-                    return { success: true, message: `Chrome profile set to "${displayName}" (${profile}). All future browser opens will use this profile.` };
-                }
-
-                case 'open': {
-                    const savedProfile = db.getConfig('browser.chrome_profile');
-                    const args = [];
-                    if (savedProfile) args.push(`--profile-directory="${savedProfile}"`);
-                    if (url) args.push(`"${url}"`);
-
-                    return new Promise((resolve) => {
-                        const cmd = `"${chromePath}" ${args.join(' ')}`;
-                        exec(cmd, { timeout: 10000, windowsHide: true }, (err) => {
-                            if (err) {
-                                // Fallback: try without full path
-                                exec(`start "" chrome ${args.join(' ')}`, { timeout: 10000, windowsHide: true }, (err2) => {
-                                    if (err2) resolve({ error: err2.message });
-                                    else resolve({ success: true, launched: 'Chrome', profile: savedProfile || 'default' });
-                                });
-                            } else {
-                                resolve({ success: true, launched: 'Chrome', profile: savedProfile || 'default' });
-                            }
-                        });
-                    });
-                }
-
-                default:
-                    return { error: 'Invalid action. Use: open, list_profiles, or set_default' };
             }
         },
     },

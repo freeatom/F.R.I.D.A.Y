@@ -146,19 +146,30 @@ class AdminPanel {
     }
 
     _renderLLMTab() {
+        const currentProvider = this.config['llm.primary_provider'] || 'groq';
         return `
             <div class="admin-section">
                 <h3>LLM Provider</h3>
-                ${this._input('llm.provider', 'Provider', 'openrouter')}
-                ${this._input('llm.model', 'Model', 'google/gemini-2.0-flash-001')}
-                ${this._input('llm.api_key', 'API Key', '••••••••', 'password')}
+                <div class="admin-input-row">
+                    <label>Primary Provider</label>
+                    <select class="admin-input" onchange="adminPanel.saveConfig('llm.primary_provider', this.value)">
+                        <option value="openrouter" ${currentProvider === 'openrouter' ? 'selected' : ''}>OpenRouter</option>
+                        <option value="groq" ${currentProvider === 'groq' ? 'selected' : ''}>Groq</option>
+                    </select>
+                </div>
+                <h3>OpenRouter</h3>
+                ${this._secretInput('llm.openrouter_key', 'OpenRouter API Key', 'sk-or-...')}
+                ${this._input('llm.openrouter_model', 'OpenRouter Model', 'google/gemini-2.0-flash-001')}
+                <h3>Groq</h3>
+                ${this._secretInput('llm.groq_key', 'Groq API Key', 'gsk_...')}
+                ${this._input('llm.groq_model', 'Groq Model', 'llama-3.3-70b-versatile')}
                 <h3>Web Search</h3>
-                ${this._input('you_search_key', 'You.com API Key', '••••••••', 'password')}
+                ${this._secretInput('you_search_key', 'You.com API Key', 'your-key')}
                 <h3>Email (SMTP)</h3>
                 ${this._input('email.host', 'SMTP Host', 'smtp.gmail.com')}
                 ${this._input('email.port', 'SMTP Port', '587')}
                 ${this._input('email.user', 'Email Address', 'your@email.com')}
-                ${this._input('email.pass', 'Email Password', '••••••••', 'password')}
+                ${this._secretInput('email.pass', 'Email Password', '••••••••')}
             </div>
         `;
     }
@@ -278,12 +289,42 @@ class AdminPanel {
         return `
             <div class="admin-input-row">
                 <label>${label}</label>
-                <input type="${type}" value="${type === 'password' && val ? '••••••••' : val}"
+                <input type="${type}" value="${val}"
                        placeholder="${placeholder}"
                        onchange="adminPanel.saveConfig('${key}', this.value)"
                        class="admin-input">
             </div>
         `;
+    }
+
+    _secretInput(key, label, placeholder = '') {
+        const hasValue = !!this.config[key];
+        return `
+            <div class="admin-input-row">
+                <label>${label}</label>
+                <div style="display:flex;gap:6px;flex:1">
+                    <input type="password" value=""
+                           placeholder="${hasValue ? '••••••• (saved)' : placeholder}"
+                           id="secret-${key.replace(/\./g, '-')}"
+                           class="admin-input" style="flex:1">
+                    <button class="admin-btn" onclick="adminPanel.saveSecret('${key}', 'secret-${key.replace(/\./g, '-')}')">Save</button>
+                </div>
+            </div>
+        `;
+    }
+
+    async saveSecret(key, inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const val = input.value.trim();
+        if (!val || val === '••••••••' || val === '•••••••') {
+            if (typeof showToast === 'function') showToast('Enter a new key first', 'warning');
+            return;
+        }
+        await this.saveConfig(key, val);
+        input.value = '';
+        input.placeholder = '••••••• (saved)';
+        if (typeof showToast === 'function') showToast(`${key} saved!`, 'success');
     }
 
     toggle() {

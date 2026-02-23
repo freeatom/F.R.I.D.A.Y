@@ -37,7 +37,8 @@
         connectWebSocket();
         setupQuickActions();
         setupIPC();
-        setupNewChat(); 
+        setupNewChat();
+        setupAdmin();
 
         // Init admin panel
         const admin = new window.AdminPanel(API_BASE);
@@ -48,6 +49,94 @@
 
         // Periodically refresh dashboard
         setInterval(loadDashboard, 60000);
+    }
+
+    // ---- Admin Settings (index.html tab) ----
+    function setupAdmin() {
+        // Helper: save a config key
+        async function saveKey(key, value) {
+            try {
+                const res = await fetch(`${API_BASE}/api/config`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key, value }),
+                });
+                const data = await res.json();
+                if (data.success) showToast(`${key} saved!`, 'success');
+                else showToast(`Failed: ${data.error}`, 'error');
+            } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
+        }
+
+        // Load existing config into fields
+        fetch(`${API_BASE}/api/config`).then(r => r.json()).then(cfg => {
+            const providerSelect = document.getElementById('cfg-primary-provider');
+            if (providerSelect && cfg['llm.primary_provider']) {
+                providerSelect.value = cfg['llm.primary_provider'];
+            }
+            const groqModel = document.getElementById('cfg-groq-model');
+            if (groqModel && cfg['llm.groq_model']) groqModel.value = cfg['llm.groq_model'];
+            const orModel = document.getElementById('cfg-openrouter-model');
+            if (orModel && cfg['llm.openrouter_model']) orModel.value = cfg['llm.openrouter_model'];
+
+            // Show LLM status
+            const statusEl = document.getElementById('llm-status');
+            if (statusEl) {
+                const primary = cfg['llm.primary_provider'] || 'groq';
+                const hasGroq = !!cfg['llm.groq_key'];
+                const hasOR = !!cfg['llm.openrouter_key'];
+                statusEl.innerHTML = `Primary: <strong>${primary}</strong> | Groq: ${hasGroq ? '✅' : '❌'} | OpenRouter: ${hasOR ? '✅' : '❌'}`;
+            }
+        }).catch(() => { });
+
+        // Provider dropdown
+        const providerSelect = document.getElementById('cfg-primary-provider');
+        if (providerSelect) {
+            providerSelect.addEventListener('change', () => saveKey('llm.primary_provider', providerSelect.value));
+        }
+
+        // Save Groq key
+        const btnSaveGroq = document.getElementById('btn-save-groq');
+        if (btnSaveGroq) {
+            btnSaveGroq.addEventListener('click', () => {
+                const val = document.getElementById('cfg-groq-key')?.value?.trim();
+                if (!val) return showToast('Enter a key first', 'warning');
+                saveKey('llm.groq_key', val);
+            });
+        }
+
+        // Save OpenRouter key
+        const btnSaveOR = document.getElementById('btn-save-or');
+        if (btnSaveOR) {
+            btnSaveOR.addEventListener('click', () => {
+                const val = document.getElementById('cfg-openrouter-key')?.value?.trim();
+                if (!val) return showToast('Enter a key first', 'warning');
+                saveKey('llm.openrouter_key', val);
+            });
+        }
+
+        // Toggle show/hide groq key
+        const btnToggleGroq = document.getElementById('btn-toggle-groq');
+        if (btnToggleGroq) {
+            btnToggleGroq.addEventListener('click', () => {
+                const input = document.getElementById('cfg-groq-key');
+                if (input) { input.type = input.type === 'password' ? 'text' : 'password'; btnToggleGroq.textContent = input.type === 'password' ? 'Show' : 'Hide'; }
+            });
+        }
+
+        // Toggle show/hide OpenRouter key
+        const btnToggleOR = document.getElementById('btn-toggle-or');
+        if (btnToggleOR) {
+            btnToggleOR.addEventListener('click', () => {
+                const input = document.getElementById('cfg-openrouter-key');
+                if (input) { input.type = input.type === 'password' ? 'text' : 'password'; btnToggleOR.textContent = input.type === 'password' ? 'Show' : 'Hide'; }
+            });
+        }
+
+        // Save models on change
+        const groqModel = document.getElementById('cfg-groq-model');
+        if (groqModel) groqModel.addEventListener('change', () => saveKey('llm.groq_model', groqModel.value));
+        const orModel = document.getElementById('cfg-openrouter-model');
+        if (orModel) orModel.addEventListener('change', () => saveKey('llm.openrouter_model', orModel.value));
     }
 
     // ---- Tabs ----
