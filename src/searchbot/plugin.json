@@ -1,0 +1,50 @@
+{
+    "name": "SearchBot",
+    "version": "1.0.0",
+    "description": "Local PC file search agent — indexes and finds your files intelligently",
+    "icon": "🔍",
+    "author": "FRIDAY AI",
+    "capabilities": [
+        "file_search",
+        "file_index"
+    ],
+    "entrypoint": "index.js",
+    "tools": [
+        {
+            "name": "search_files",
+            "description": "Search indexed files on the PC by content, name, or type",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "description": "Search text"
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Filter: file/image/document/code/any"
+                },
+                "limit": {
+                    "type": "number",
+                    "description": "Max results (default 10)"
+                }
+            }
+        },
+        {
+            "name": "searchbot_status",
+            "description": "Get SearchBot index statistics and scan status"
+        },
+        {
+            "name": "scan_files",
+            "description": "Trigger a file index scan (full or quick)",
+            "parameters": {
+                "mode": {
+                    "type": "string",
+                    "description": "full or quick"
+                },
+                "directories": {
+                    "type": "array",
+                    "description": "Optional: specific directories to scan"
+                }
+            }
+        }
+    ]
+}
