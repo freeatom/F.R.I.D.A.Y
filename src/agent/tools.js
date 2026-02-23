@@ -126,23 +126,41 @@ const TOOLS = [
     },
     {
         name: 'launch_app',
-        description: 'Launch an application or open a file/URL on the system.',
+        description: 'Launch an application or open a file on the system. Do NOT use this carelessly — only launch apps when the user explicitly asks to open something.',
         permissionKey: 'app_launch',
         parameters: {
             type: 'object',
             properties: {
-                target: { type: 'string', description: 'Path to app, file, or URL to open' },
+                target: { type: 'string', description: 'Path to app or file to open' },
             },
             required: ['target'],
         },
         execute: async ({ target }) => {
-            return new Promise((resolve) => {
-                const cmd = process.platform === 'win32' ? `start "" "${target}"` : `open "${target}"`;
-                exec(cmd, { timeout: 10000 }, (err) => {
-                    if (err) resolve({ error: err.message });
-                    else resolve({ success: true, launched: target });
+            try {
+                const { shell } = require('electron');
+                const path = require('path');
+                const resolvedTarget = path.resolve(target);
+
+                // Use shell.openPath for files/apps — no CMD window
+                const result = await shell.openPath(resolvedTarget);
+                if (result === '') {
+                    return { success: true, launched: target };
+                }
+                // If openPath fails (returns error string), try openExternal for URLs
+                if (/^https?:\/\//i.test(target)) {
+                    await shell.openExternal(target);
+                    return { success: true, launched: target };
+                }
+                // Last resort: exec with hidden window
+                return new Promise((resolve) => {
+                    exec(`start "" "${target}"`, { timeout: 10000, windowsHide: true }, (err) => {
+                        if (err) resolve({ error: err.message });
+                        else resolve({ success: true, launched: target });
+                    });
                 });
-            });
+            } catch (e) {
+                return { error: e.message };
+            }
         },
     },
     {
