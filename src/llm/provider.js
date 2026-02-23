@@ -36,6 +36,31 @@ class LLMProvider {
         this.lastUsedProvider = null;
         this.retryCount = 0;
         this.maxRetries = 2;
+        this._migrated = false;
+    }
+
+    // Auto-migrate old config keys from broken admin panel
+    _migrateIfNeeded() {
+        if (this._migrated) return;
+        this._migrated = true;
+        try {
+            // Migrate llm.api_key → llm.openrouter_key (old admin panel used wrong key)
+            const oldKey = db.getRawConfig('llm.api_key');
+            if (oldKey && !db.getRawConfig('llm.openrouter_key')) {
+                db.setConfig('llm.openrouter_key', oldKey);
+                db.logActivity('config_migration', 'Migrated llm.api_key → llm.openrouter_key', 'system');
+            }
+            // Migrate llm.provider → llm.primary_provider
+            const oldProvider = db.getConfig('llm.provider');
+            if (oldProvider && !db.getConfig('llm.primary_provider')) {
+                db.setConfig('llm.primary_provider', oldProvider);
+                db.logActivity('config_migration', 'Migrated llm.provider → llm.primary_provider', 'system');
+            }
+            // Ensure default is openrouter
+            if (!db.getConfig('llm.primary_provider')) {
+                db.setConfig('llm.primary_provider', 'openrouter');
+            }
+        } catch (e) { /* ignore migration errors */ }
     }
 
     _getProviderOrder() {
@@ -57,6 +82,7 @@ class LLMProvider {
     }
 
     async chat(messages, tools = [], options = {}) {
+        this._migrateIfNeeded();
         const providerOrder = this._getProviderOrder();
         let lastError = null;
 
@@ -150,6 +176,7 @@ class LLMProvider {
     }
 
     async chatStream(messages, onChunk, tools = [], options = {}) {
+        this._migrateIfNeeded();
         const providerOrder = this._getProviderOrder();
         let lastError = null;
 
