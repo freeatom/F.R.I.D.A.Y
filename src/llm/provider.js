@@ -39,7 +39,7 @@ class LLMProvider {
     }
 
     _getProviderOrder() {
-        const primary = db.getConfig('llm.primary_provider') || 'groq';
+        const primary = db.getConfig('llm.primary_provider') || 'openrouter';
         const secondary = primary === 'groq' ? 'openrouter' : 'groq';
         return [primary, secondary];
     }
