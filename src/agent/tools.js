@@ -746,9 +746,10 @@ public class FG {
     // ====================== SHORTCUT & INTELLIGENCE TOOLS ======================
     {
         name: 'manage_shortcut',
-        description: `Manage user shortcuts/trigger phrases. When the user says \"when I say X, do Y\" or you detect a pattern, save it as a shortcut. Next time the trigger is used, you'll automatically know what to do.
+        description: `Manage SIMPLE user shortcuts — single trigger word/phrase mapped to a single action. ONLY use when the user EXPLICITLY says "when I say X, do Y" or sets up a quick command alias.
+DO NOT use this for learning multi-step procedures — use learn_skill for that instead.
 Actions: create (save new shortcut), list (show all), delete (remove by ID).
-Examples: "when I say 'browser', open Chrome" → saves trigger "browser" → tool launch_app with target Chrome.`,
+Example: "when I say 'browser', open Chrome" → create shortcut: trigger="browser", mapped_action="Open Chrome", tool_name="launch_app".`,
         permissionKey: null,
         parameters: {
             type: 'object',
@@ -1138,7 +1139,15 @@ Examples: "when I say 'browser', open Chrome" → saves trigger "browser" → to
     // ====================== SKILL LEARNING TOOLS ======================
     {
         name: 'learn_skill',
-        description: `CRITICAL TOOL: When the user teaches you how to do something, or when you figure out how to do something new (from web search, experimentation, or user guidance), ALWAYS use this tool to save it as a reusable skill. Next time you encounter a similar task, you'll recall this skill and execute it without needing to be taught again. Skills persist forever across sessions.`,
+        description: `CRITICAL TOOL FOR SELF-LEARNING: Save reusable multi-step procedures and knowledge.
+USE THIS when:
+- The user teaches you how to do something new
+- You figure out a procedure via web_search or experimentation
+- You complete a multi-step task that could be repeated
+- You learn a technique, workflow, or method worth remembering
+DO NOT confuse with manage_shortcut (that's only for simple "when I say X, do Y" one-word triggers).
+Skills persist forever and are recalled automatically via recall_skill.
+Examples: "how to deploy to Vercel", "how to send email via Gmail SMTP", "how to convert PDF to Word"`,
         permissionKey: null,
         parameters: {
             type: 'object',
