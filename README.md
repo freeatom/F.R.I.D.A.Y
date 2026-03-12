@@ -92,19 +92,3 @@ FRIDAY AI
 
 See [SECURITY.md](SECURITY.md) for full details.
 
-## 🛠️ Development
-
-```bash
-# Run in development mode
-npm run dev
-```
-
-## 📄 License
-
-This project is private. All rights reserved.
-
----
-
-<div align="center">
-  <strong>Built with ❤️ by ABeezzz LABS</strong>
-</div>
