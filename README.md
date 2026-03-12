@@ -1,13 +1,30 @@
+# 🤖 FRIDAY AI — Your Autonomous Personal AI Agent
+
 <div align="center">
-  <img src="assets/icon.png" alt="FRIDAY AI Logo" width="120" />
-  <h1>FRIDAY AI 🧠⚡</h1>
-  <p><strong>An elite autonomous personal AI agent — self-reliant, self-healing, continuously learning, and deeply integrated into your operating system.</strong></p>
-  
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Electron](https://img.shields.io/badge/Electron-19.0.0-47848F.svg)](https://www.electronjs.org/)
+
+**An elite, self-healing, continuously learning AI personal assistant — built with Electron, powered by LLMs.**
+
+FRIDAY is your dedicated JARVIS: fiercely loyal, proactive, witty, and brilliant.
+
 </div>
 
-<hr />
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---|---|
+| 🧠 **Self-Healing Intelligence** | Never says "I can't" — auto-searches, auto-recalls skills, retries with different approaches |
+| ⚡ **38 Built-in Tools** | File management, app launching, web search, scheduling, reminders, goals, email, system info |
+| 📚 **Skill Learning** | Learns new capabilities and recalls them automatically |
+| 🔗 **Knowledge Graph** | Persistent memory across conversations with semantic extraction |
+| ⏰ **Scheduling & Reminders** | Full CRUD for schedules, reminders, goals with notifications |
+| 💊 **System Health Monitoring** | Proactive disk/CPU/memory monitoring with alerts |
+| 🎯 **User Shortcuts** | Learn your language — "when I say X, do Y" |
+| 📋 **Smart Clipboard** | Auto-detects clipboard content type and suggests actions |
+| 🔄 **Self-Evolution** | Can read and modify its own codebase |
+| 💾 **Persistent State** | Session survives restarts — never forgets |
+| 🔒 **Security-First** | AES-256-GCM encryption, CSP headers, input sanitization, path validation |
 
 ## 🚀 Overview
 
@@ -45,7 +62,7 @@ When a command is received, FRIDAY executes a multi-step synchronous loop:
 4. **Self-Evaluation**: After responding, FRIDAY background-executes a `_selfEvaluate` prompt to check if it accurately fulfilled the user's command. If it detects a hallucination, it auto-corrects.
 5. **Continuous Learning**: Background processes analyze interactions to map new shortcuts ("when I say X, do Y") and store successful complex multi-tool procedures as permanent `skills`.
 
-## 🌟 Capabilities & Features
+## 🌟 Capabilities 
 
 ### 💻 Deep OS & Filesystem Integration
 - **File Management**: Read from, write to, and traverse up and down local directories securely.
